@@ -23,6 +23,6 @@ An AI-powered application where users can input a **YouTube video ID**, fetch th
 
 ### 1️⃣ Clone the Repository
 ```bash
-git clone https://github.com/your-username/youtube-video-qa.git
-cd youtube-video-qa
+git clone https://github.com/sattycodex/youtube-video-summary.git
+cd youtube-video-summary
 
