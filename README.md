@@ -26,3 +26,4 @@ An AI-powered application where users can input a **YouTube video ID**, fetch th
 git clone https://github.com/sattycodex/youtube-video-summary.git
 cd youtube-video-summary
 install required dependencies.
+Replace with your LLM model and Embedding model 
