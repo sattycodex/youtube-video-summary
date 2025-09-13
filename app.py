@@ -15,7 +15,7 @@ def store_embeddings(texts):
     vector_store= FAISS.from_texts(chunks, embeddings)
     retriever=vector_store.as_retriever(search_type="similarity", search_kwargs={"k":3})
     retrieved_docs=retriever.invoke("give me summary of this video")
-    print("sample retrieved docs: ",retrieved_docs)
+    st.toast("Transcript loaded successfully into database",icon="✅")
     return retriever
 
 
@@ -31,8 +31,9 @@ def load_youtube_transcript(video_id: str):
 def get_response(question):
     llm = EuriLLM()
     retriever=st.session_state.retriever
-    prompt_template = """You are a helpful assistant that helps people find information.
-    Use the following pieces of context to answer the question at the end.
+    prompt_template = """You are expert in youtube video question answer that helps people find information.
+    Use only the following pieces of context to answer the question at the end.
+    Do not give response which is outside of the context.
     If you don't know the answer, just say that you don't know, don't try to make up an answer.
     {context}
     Question: {question}
@@ -53,7 +54,6 @@ def get_response(question):
 
     chain = conext_and_query | prompt | llm | output_parser
     response=chain.invoke({'question': question})
-    print("response is: ",response)
     return response
 
 
@@ -63,9 +63,11 @@ st.sidebar.title("youtube video Id")
 video_id=st.sidebar.text_input("Enter youtube video id", key="video_id")
 
 ## load transcript and store embeddings and return retriever
-isLoaded=False
 if 'retriever' not in st.session_state:
     st.session_state.retriever=None
+
+if 'videoloaded' not in st.session_state:
+    st.session_state.videoloaded=False
 
 if st.sidebar.button("Process", key="process"):
     if video_id == "":
@@ -75,9 +77,9 @@ if st.sidebar.button("Process", key="process"):
             transcript = load_youtube_transcript(video_id)
             if transcript:
                 st.toast("Transcript loaded successfully",icon="✅")
-                retriever=store_embeddings(transcript[0:1000])
+                retriever=store_embeddings(transcript)
                 st.session_state.retriever=retriever
-                isLoaded=True
+                st.session_state.videoloaded=True
             else:
                 st.toast("No transcript available for this video",icon="⚠️")
 
@@ -88,18 +90,18 @@ st.title("Youtube Video Summary")
 st.write("Enter youtube video id in the sidebar to get the summary of the video")		
 if "messages" not in st.session_state:
     st.session_state.messages = []
+
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-if prompt := st.chat_input("Ask Your Questions...",disabled=(isLoaded==False)):
+if prompt := st.chat_input("Ask Your Questions...",disabled=(st.session_state.videoloaded==False)):
     st.session_state.messages.append({"role": "user", "content": prompt})
     
     with st.chat_message("user"):
         st.markdown(prompt)
 
     with st.chat_message("assistant"):
-        response_container = st.empty()
         full_response = get_response(prompt)
         st.markdown(full_response)
     st.session_state.messages.append({"role": "assistant", "content": full_response})	
